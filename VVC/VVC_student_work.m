@@ -1,4 +1,4 @@
-% function [exitflag,Final_voltage,P_sol,x_solution,Current] = VVC_student(location,MC,Bus,Line,NO,Imax, Param, Source_nodes)
+function [exitflag,Final_voltage,P_sol,x_solution,Current] = VVC_student_work(location,MC,Bus,Line,NO,Imax, Param, Source_nodes)
 
 % Objective : find the optimal settings of transformers and the minimal reative power
 % of producers injection/absorption that respect technical constraints
@@ -29,18 +29,37 @@
 % settings found by the algorithm
 
 %% To remove when creating the function
-clear all
-clc
+% clear all
+% clc
 
-Line = xlsread('Test_matrix','Line');
-Bus = xlsread('Test_matrix','Bus');
-Param = xlsread('Test_matrix','Parametres');
-Imax = xlsread('Test_matrix','I_max');
-NO = [8;10;12;13;17];
-location = [12 13];
-Source_nodes = [2;3;11];
-MC = zeros(max(Bus(:,1)),1);
-for i=1:length(Bus(:,1)),
-    MC(Bus(i,1),1) = i;
-end
-%%
+% the H matrix is [V(source nodes) Q(locations)]
+% the H matrix is [V2 V3 V5 Q12 Q13]
+
+%  fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options)
+
+% fun is defined taking in H as the input and computes the square of the
+% reactive power
+
+% the initial condition is set for the optimization to be performed
+% x0=[1 1 1 0 0];
+x0=[ones(1,size(Source_nodes,1)) zeros(1,size(location,2))]
+
+% A and b is set to null matrix since there is no criteria as A*x ? b
+A=[];
+b=[];
+
+% Aeq and beq is set to null matrix since there is no criteria as Aeq*x =
+% beq
+Aeq=[];
+beq=[];
+
+% Lower and upper bounds for the bus voltages are set to 10 percent
+% boundary
+lb=[0.95*ones(1,size(Source_nodes,1)) -Inf*ones(1,size(location,2))];
+ub=[1.05*ones(1,size(Source_nodes,1)) Inf*ones(1,size(location,2))];
+
+funcNonLin=@createNonLinIneq;
+% nonLinfunc=@funcNonLin(Bus,Line,Source_nodes,Param,Imax,MC,x(1:size(Source_nodes,1)));
+options = optimoptions('fmincon','Display','iter','Algorithm','sqp');
+
+x = fmincon(@fun,x0,A,b,Aeq,beq,lb,ub,funcNonLin,options)
