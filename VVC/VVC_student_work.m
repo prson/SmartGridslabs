@@ -42,9 +42,9 @@ function [exitflag,Final_voltage,P_sol,x_solution,Current] = VVC_student_work(lo
 
 % the initial condition is set for the optimization to be performed
 % x0=[1 1 1 0 0];
-x0=[ones(1,size(Source_nodes,1)) zeros(1,size(location,2))]
+x0=[ones(1,size(Source_nodes,1)) zeros(1,size(location,2))];
 
-% A and b is set to null matrix since there is no criteria as A*x ? b
+% A and b is set to null matrix since there is no criteria as A*x <> b
 A=[];
 b=[];
 
@@ -54,12 +54,16 @@ Aeq=[];
 beq=[];
 
 % Lower and upper bounds for the bus voltages are set to 10 percent
-% boundary
+% boundary, there are no boundaries for reactive power induction by the
+% buses
 lb=[0.95*ones(1,size(Source_nodes,1)) -Inf*ones(1,size(location,2))];
 ub=[1.05*ones(1,size(Source_nodes,1)) Inf*ones(1,size(location,2))];
 
-funcNonLin=@createNonLinIneq;
-% nonLinfunc=@funcNonLin(Bus,Line,Source_nodes,Param,Imax,MC,x(1:size(Source_nodes,1)));
-options = optimoptions('fmincon','Display','iter','Algorithm','sqp');
+% funcNonLin=@createNonLinIneq;
+nonLinfunc=@(x) createNonLinIneq(x,Bus,Line,Source_nodes,Param,Imax,MC,location);
+options = optimoptions(@fmincon,'Algorithm','sqp','Display','off');
 
-x = fmincon(@fun,x0,A,b,Aeq,beq,lb,ub,funcNonLin,options)
+[x_solution,~,exitflag]= fmincon(@fun,x0,A,b,Aeq,beq,lb,ub,nonLinfunc,options)
+[Final_voltage, Current]=OLTC_lf(Bus,Line,Source_nodes,Param,Imax,MC,x_solution(1:length(Source_nodes)))
+
+

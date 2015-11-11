@@ -1,5 +1,7 @@
-Line = xlsread('Test_matrix','Line')
-Bus = xlsread('Test_matrix','Bus')
+clc
+clear
+Line = xlsread('Test_matrix','Line');
+Bus = xlsread('Test_matrix','Bus');
 Param = xlsread('Test_matrix','Parametres');
 Imax = xlsread('Test_matrix','I_max');
 NO = [8;10;12;13;17];
